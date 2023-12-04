@@ -51,11 +51,12 @@ async function run() {
     const works = client.db('volunteerDB').collection('works');
     const users = client.db('volunteerDB').collection('users');
     const events = client.db('volunteerDB').collection('events');
+    const joinedEvents = client.db('volunteerDB').collection('joinedEvents');
 
     //jwt
     app.post('/jwt',async(req,res)=>{
       const user= req.body;
-      const token = jwt.sign(user, process.env.ACCESS_TOKEN,{expiresIn:'60s'});
+      const token = jwt.sign(user, process.env.ACCESS_TOKEN,{expiresIn:'1h'});
       res.send({token});
     });
 
@@ -82,8 +83,35 @@ async function run() {
       const result ={admin: user?.role ==='admin'};
       res.send(result);
     });
+    app.get('/joinedevents/:email',verifyJWT, async(req,res)=>{
+      const email =req.params.email;
+      const query ={email:email}
+      const result =await joinedEvents.findOne(query);
+      res.send(result);
+    });
+   
     
     
+    
+
+    app.get('/joinedevents',async(req,res)=>{
+      const result = await joinedEvents.find().toArray();
+      res.send(result);
+    });
+
+    app.post('/joinedevents',async(req,res)=>{
+      const joinedEvent =req.body;
+      const {eventId, email,} =joinedEvent;
+      const isAlreadyJoined =await joinedEvents.findOne({eventId,email});
+      if(!isAlreadyJoined){
+
+       const result= await joinedEvents.insertOne(joinedEvent);
+        res.send({result,success:true});
+      }else{
+        res.json({success:false,error:'User Already joined'})
+      }
+      
+    });
 
     app.get('/works',async(req,res)=>{
       const result = await works.find().toArray();
@@ -123,6 +151,7 @@ async function run() {
       const result =await events.insertOne(event);
       res.send(result);
     });
+   
 
     app.delete('/events/:id',async(req,res)=>{
     const id= req.params.id;
