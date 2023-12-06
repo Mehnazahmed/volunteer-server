@@ -52,11 +52,12 @@ async function run() {
     const users = client.db('volunteerDB').collection('users');
     const events = client.db('volunteerDB').collection('events');
     const joinedEvents = client.db('volunteerDB').collection('joinedEvents');
+    const blogs = client.db('volunteerDB').collection('blogs');
 
     //jwt
     app.post('/jwt',async(req,res)=>{
       const user= req.body;
-      const token = jwt.sign(user, process.env.ACCESS_TOKEN,{expiresIn:'1h'});
+      const token = jwt.sign(user, process.env.ACCESS_TOKEN,{expiresIn:'1hr'});
       res.send({token});
     });
 
@@ -86,7 +87,7 @@ async function run() {
     app.get('/joinedevents/:email',verifyJWT, async(req,res)=>{
       const email =req.params.email;
       const query ={email:email}
-      const result =await joinedEvents.findOne(query);
+      const result =await joinedEvents.find(query).toArray();
       res.send(result);
     });
    
@@ -113,6 +114,15 @@ async function run() {
       
     });
 
+    app.get('/blogs',async(req,res)=>{
+      const result = await blogs.find().toArray();
+      res.send(result);
+    });
+    app.post('/blogs',async(req,res)=>{
+      const blog =req.body;
+      const result =await blogs.insertOne(blog);
+      res.send(result);
+    });
     app.get('/works',async(req,res)=>{
       const result = await works.find().toArray();
       res.send(result);
